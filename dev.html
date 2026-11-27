@@ -33,7 +33,8 @@
 <div class="hint">
   在这里改剧情、加节点，<b>不用写代码</b>。<br>
   改动只保存在<b>这台设备的浏览器</b>里（草稿本）；要变成手机上的正式版，请点「导出全部」，把 JSON 文本发给 AI 合并进 data.js 推仓库（出版印刷）。<br>
-  选项写法：一行一个，<b>选项文字→目标节点id</b>（箭头用 → ）。
+  选项写法：一行一个，<b>选项文字→目标节点id</b>（箭头用 → ）。<br>
+  除了改文字，下方还能编辑<b>世界（切片）表</b>：每个世界的配图、配色、流速、相位——不用写代码。
 </div>
 
 <div class="cols">
@@ -45,7 +46,7 @@
     <input id="f_speaker">
     <label>正文（一行一段）</label>
     <textarea id="f_text" rows="7"></textarea>
-    <label>选项（一行一个：文字→目标id；留空=用下面的"继续"）</label>
+    <label>选项（一行一个：文字→目标id；有门槛加"←身份=摆渡人"；留空=用下面的"继续"）</label>
     <textarea id="f_choices" rows="4"></textarea>
     <label>无选项时接到的节点 id（可留空）</label>
     <input id="f_next">
@@ -63,11 +64,33 @@
       <button id="btn_del" class="red">删除（仅自建节点）</button>
     </div>
 
+    <h1 style="margin-top:22px">剧情机制（可全留空 = 普通文本节点）</h1>
+    <label>进入切片（填世界名，如 灰世界；进入瞬间掷流速/相位）</label>
+    <input id="f_enter">
+    <label>切出画面（回舰内等填世界名；进入=空）</label>
+    <input id="f_world">
+    <label>主观停留天数（结算时按流速折算扣余额）</label>
+    <input id="f_stay" placeholder="例如 9">
+    <label>章节结尾（随便填个记号=本节点是章末，接新章时清空）</label>
+    <input id="f_end" placeholder="例如 end 或 第三章 · 完">
+    <label>写入旗标（逗号分隔：名字=值；身份旗标叫 身份）</label>
+    <input id="f_flags" placeholder="例如 见周工=1">
+    <label>相位路由（本节点隐藏，按当前相位跳转：相位:节点id;…，可用 default 兜底）</label>
+    <input id="f_dispatch" placeholder="例如 起始:c5a;繁荣:c5b;衰败:c5c;default:c5b">
+
     <h1 style="margin-top:22px">物品表</h1>
     <textarea id="f_items" rows="5" placeholder="一行一个：名字|图标|描述&#10;剩余时间协议|📜|全文74页，有效部分4行。"></textarea>
     <h1 style="margin-top:16px">收藏品表（获得后自动进游戏里的「箱子」页）</h1>
     <textarea id="f_collect" rows="5" placeholder="一行一个：名字|图标|描述"></textarea>
     <div class="btnrow"><button id="btn_save_tables" class="gray">保存物品/收藏表</button></div>
+
+    <h1 style="margin-top:22px">世界表（每个切片的图片和配色）</h1>
+    <textarea id="f_worlds" rows="6" placeholder="一行一个世界：名字|图片文件|图标题|流速区间|相位天数|配色&#10;灰世界|gray.svg|灰世界 · 现场影像|1.1-1.6|起始:6-14;繁荣:30-80|--bg:#d3d2ba;--text:#26251a"></textarea>
+    <div class="hint" style="margin-top:6px">
+      六段用 | 隔开，<b>留空的那段就用游戏里的原值</b>。流速写「下限-上限」（伊甸号=1）；相位写「名字:最少天-最多天」，多个用分号；配色写「--变量:颜色」，多个用分号（改图只填第2段即可）。<br>
+      图片要先发给 AI 放进仓库才能显示；也可以先用已有的 space.svg / gray.svg 换着玩。
+    </div>
+    <div class="btnrow"><button id="btn_save_worlds" class="gray">保存世界表</button></div>
   </div>
 </div>
 
