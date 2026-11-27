@@ -12,21 +12,18 @@
 <body>
 <div id="app">
   <section class="status-card" id="statuscard">
-    <div class="status-head">
-      <span>CABIN STATUS</span>
-      <button id="resetbtn" title="重新开始">∞</button>
-    </div>
     <div class="viewport" id="viewport">
-      <img src="space.svg" alt="外部视野">
-      <div class="status-title">太空舱 · 外部视野</div>
-    </div>
-    <div class="status-foot">
-      <span>舱室状态</span>
-      <b id="cabinstatus">正常运行</b>
+      <img id="vpimg" src="space.svg" alt="外部视野">
+      <div class="status-title" id="vptitle">太空舱 · 外部视野</div>
     </div>
   </section>
 
-  <nav class="tabbar" id="tabbar"></nav>
+  <nav class="tabbar" id="tabbar">
+    <div class="tabtools">
+      <a class="tbtn" href="dev.html" title="编辑页">✎</a>
+      <button class="tbtn" id="tabreset" title="重新开始">∞</button>
+    </div>
+  </nav>
 
   <main id="view"></main>
 </div>
@@ -46,7 +43,7 @@
 
 <div id="pinbanner">
   <div class="pb">
-    <img src="space.svg" alt="">
+    <img id="pbimg" src="space.svg" alt="">
     <div class="pb-bar">
       <span class="pb-brand">EDEN / <span id="podnum">000</span></span>
       <span class="pb-status" id="pincabin">正常运行</span>
