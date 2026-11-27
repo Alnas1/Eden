@@ -50,10 +50,10 @@ body {
   background: none; border: none; cursor: pointer;
   color: var(--dim); font-size: 16px; padding: 2px 6px;
 }
-/* 外部视野 = 以后放图片的区域 */
-.viewport { text-align: center; padding: 18px 0 4px; }
-.viewport img { width: 100%; border-radius: 12px; display: block; }
-.status-title { text-align: center; color: #4a4e63; font-size: 19px; font-weight: 600; margin: 10px 0 20px; }
+/* 外部视野 = 图片区域（space.svg 是占位图，以后直接换文件） */
+.viewport { padding: 14px 0 0; }
+.viewport img { width: 100%; height: 132px; object-fit: cover; border-radius: 12px; display: block; }
+.status-title { text-align: center; color: #4a4e63; font-size: 19px; font-weight: 600; margin: 12px 0 20px; }
 .status-foot {
   display: flex; justify-content: space-between;
   border-top: 1px solid var(--line);
@@ -75,9 +75,8 @@ body {
   padding: 8px 10px; border-radius: 8px;
 }
 .tab.active { color: var(--text); font-weight: 700; }
-.tab.on { color: var(--accent); font-weight: 700; }
 
-/* 收起后的顶部细条幅：EDEN/编号 + 舱室状态 + ∞ */
+/* 收起后的顶部条幅：占位图 + EDEN/编号 + 舱室状态 + ∞ */
 #pinbanner {
   position: fixed; top: 0; left: 0; right: 0; z-index: 10;
   display: flex; justify-content: center; pointer-events: none;
@@ -85,15 +84,19 @@ body {
 .pb {
   pointer-events: auto;
   width: 100%; max-width: 560px;
-  display: flex; align-items: center; justify-content: space-between; gap: 10px;
   background: rgba(244, 245, 251, .93);
   backdrop-filter: blur(8px);
-  padding: calc(8px + env(safe-area-inset-top)) 18px 8px;
+  padding-top: env(safe-area-inset-top);
   border-bottom: 1px solid #e2e5f0;
-  transform: translateY(-120%);
-  transition: transform .25s ease;
+  transform: translateY(-130%);
+  transition: transform .28s ease;
 }
 #pinbanner.show .pb { transform: translateY(0); }
+.pb img { display: block; width: 100%; height: 56px; object-fit: cover; }
+.pb-bar {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  padding: 7px 18px 8px;
+}
 .pb-brand { font-weight: 800; font-size: 16px; letter-spacing: .5px; }
 .pb-status { color: var(--dim); font-size: 13px; margin-left: auto; }
 #pinreset {
@@ -107,8 +110,9 @@ body {
 /* 正文（整页滚动，空间尽量留给剧情） */
 #view { flex: 1; padding: 12px 18px calc(36px + env(safe-area-inset-bottom)); }
 
-/* 剧情块 */
-.block { margin-bottom: 18px; animation: fadein .35s ease; }
+/* 剧情块：只有新追加的一段带淡入，重画历史段不闪 */
+.block { margin-bottom: 18px; }
+.block.enter { animation: fadein .35s ease; }
 @keyframes fadein { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; } }
 .block h2 { font-size: 22px; font-weight: 800; margin-bottom: 8px; }
 .block p { font-size: 16.5px; line-height: 1.75; margin-bottom: 6px; }
