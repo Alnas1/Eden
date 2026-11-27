@@ -9,8 +9,8 @@
 (function () {
   'use strict';
 
-  var SAVE_KEY = '***';
-  var CUSTOM_KEY = '***';
+  var SAVE_KEY = 'eden-save-v5';
+  var CUSTOM_KEY = 'eden-content-v1';
   var AVG_LIFE = 120;
 
   var D = JSON.parse(JSON.stringify(window.EDEN_DATA));
