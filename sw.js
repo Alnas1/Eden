@@ -1,8 +1,8 @@
-/* EDEN 离线缓存 v1
+/* EDEN 离线缓存 v2
  * 规则：网页本体=网络优先、失败回退缓存（改版能及时生效）；
  *       静态资源=先秒开缓存、后台悄悄更新写回（stale-while-revalidate）。
  */
-const V = 'eden-v1';
+const V = 'eden-v2';
 const CORE = ['./', './index.html', './style.css', './app.js', './data.js',
               './manifest.webmanifest', './icon.svg'];
 
