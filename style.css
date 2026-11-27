@@ -20,6 +20,7 @@ body {
   color: var(--text);
   font-family: "PingFang SC", "Microsoft YaHei", "Noto Sans SC", sans-serif;
   -webkit-tap-highlight-color: transparent;
+  transition: background-color .5s ease;
 }
 
 #app {
@@ -30,44 +31,33 @@ body {
   display: flex;
   flex-direction: column;
   box-shadow: 0 0 40px rgba(40, 44, 80, .14);
+  transition: background-color .5s ease;
 }
 @media (min-width: 600px) {
   #app { border-radius: 26px; margin: 14px auto; min-height: calc(100dvh - 28px); }
 }
 
-/* 状态大卡（顶部不再有编号行，编号收进滚动横幅里） */
+/* 状态大卡：只剩视野图片+标题，两行状态字已删 */
 .status-card {
   background: var(--card);
   border-radius: 18px;
   padding: 16px 20px 14px;
   margin: calc(10px + env(safe-area-inset-top)) 14px 10px;
+  transition: background-color .5s ease;
 }
-.status-head {
-  display: flex; justify-content: space-between; align-items: center;
-  color: var(--dim); font-size: 13px; letter-spacing: 1.5px;
-}
-#resetbtn {
-  background: none; border: none; cursor: pointer;
-  color: var(--dim); font-size: 16px; padding: 2px 6px;
-}
-/* 外部视野 = 图片区域（space.svg 是占位图，以后直接换文件） */
-.viewport { padding: 14px 0 0; }
+/* 外部视野 = 图片区域（space.svg / gray.svg 是占位图，以后直接换文件） */
+.viewport { padding: 0; }
 .viewport img { width: 100%; height: 132px; object-fit: cover; border-radius: 12px; display: block; }
-.status-title { text-align: center; color: #4a4e63; font-size: 19px; font-weight: 600; margin: 12px 0 20px; }
-.status-foot {
-  display: flex; justify-content: space-between;
-  border-top: 1px solid var(--line);
-  padding-top: 12px; color: var(--dim); font-size: 14px;
-}
-.status-foot b { color: var(--text); font-weight: 600; }
+.status-title { text-align: center; color: #4a4e63; font-size: 19px; font-weight: 600; margin: 12px 0 6px; }
 
-/* 页签行：吸顶，横幅出现时贴在横幅下沿 */
+/* 页签行：吸顶，横幅出现时贴在横幅下沿；右端常驻编辑页与重开入口 */
 .tabbar {
   position: sticky; top: var(--pinh); z-index: 5;
   display: flex; justify-content: space-between; align-items: center;
   padding: 6px 14px 2px;
   background: var(--shell);
   border-bottom: 1px solid #e2e5f0;
+  transition: background-color .5s ease;
 }
 .tab {
   background: none; border: none; cursor: pointer;
@@ -75,6 +65,13 @@ body {
   padding: 8px 10px; border-radius: 8px;
 }
 .tab.active { color: var(--text); font-weight: 700; }
+.tabtools { display: flex; align-items: center; gap: 2px; margin-left: auto; }
+.tbtn {
+  background: none; border: none; cursor: pointer; text-decoration: none;
+  font-family: inherit; font-size: 14px; color: var(--dim);
+  padding: 8px 8px; border-radius: 8px;
+}
+.tbtn:active { background: var(--chip-press); }
 
 /* 收起后的顶部条幅：占位图 + EDEN/编号 + 舱室状态 + ∞ */
 #pinbanner {
@@ -185,6 +182,12 @@ body.locked { overflow: hidden; }
 .row .desc { font-size: 14px; color: var(--dim); line-height: 1.6; }
 .row.locked { opacity: .45; }
 .row.here { outline: 2px solid var(--accent); }
+.movebtn {
+  align-self: flex-start; cursor: pointer; font-family: inherit;
+  background: none; border: 1px solid var(--line); border-radius: 8px;
+  color: var(--dim); font-size: 13px; padding: 5px 12px; margin-top: 3px;
+}
+.movebtn:active { background: var(--chip-press); }
 
 .countdown {
   font-size: 40px; text-align: center; font-weight: 700;
