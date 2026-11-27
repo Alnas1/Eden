@@ -57,11 +57,17 @@
   function saveNode() {
     var id = $('f_id').value.trim();
     if (!id) return say('先点「新建节点」拿到一个 id');
-    var node = { speaker: $('f_speaker').value.trim() };
+    // 保留编辑页表单之外的字段（end/flags/enter/stay/dispatch/need…），改文本不丢机制
+    var old = nodeOf(id) || null;
+    var node = old ? JSON.parse(JSON.stringify(old)) : {};
+    node.speaker = $('f_speaker').value.trim();
     node.text = lines($('f_text').value);
     var chs = lines($('f_choices').value).map(function (l) {
       var m = l.split(/→|->|>/);
-      return { t: (m[0] || '').trim(), to: (m[1] || '').trim() };
+      var t = (m[0] || '').trim(), c = { t: t, to: (m[1] || '').trim() };
+      var oc = ((old && old.choices) || []).filter(function (x) { return x.t === t; })[0];
+      if (oc && oc.need) c.need = oc.need;
+      return c;
     }).filter(function (c) { return c.t && c.to; });
     if (chs.length) node.choices = chs;
     if ($('f_next').value.trim()) node.next = $('f_next').value.trim();
