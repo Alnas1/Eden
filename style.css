@@ -15,6 +15,10 @@
 * { margin: 0; padding: 0; box-sizing: border-box; }
 html, body { height: 100%; }
 
+/* 修 bug：v6 及以前 #create 用 display:flex 盖掉了 hidden 属性，
+   脚本一挂弹窗就变死弹窗。此后一律 hidden 属性控制显隐。 */
+[hidden] { display: none !important; }
+
 body {
   background: var(--bg);
   color: var(--text);
@@ -107,9 +111,9 @@ body {
 /* 正文（整页滚动，空间尽量留给剧情） */
 #view { flex: 1; padding: 12px 18px calc(36px + env(safe-area-inset-bottom)); }
 
-/* 捏人（苏醒档案）：不登记就不醒来 */
+/* 复诵档案弹窗：姓名/性别/年龄（只有年龄必须数字） */
 body.locked { overflow: hidden; }
-#create {
+#ask {
   position: fixed; inset: 0; z-index: 30;
   background: rgba(223, 226, 238, .92);
   backdrop-filter: blur(10px);
@@ -126,26 +130,37 @@ body.locked { overflow: hidden; }
 .cu-k { color: var(--dim); font-size: 12.5px; letter-spacing: 2px; }
 .cu h2 { font-size: 20px; font-weight: 800; line-height: 1.4; }
 .cu-note { color: var(--dim); font-size: 13px; }
-#create input {
+#ask input {
   font-family: inherit; font-size: 17px; color: var(--text);
   background: var(--chip); border: 1px solid var(--line); border-radius: 12px;
   padding: 13px 16px; outline: none;
 }
-#create input:focus { border-color: var(--accent); }
-.roles { display: flex; flex-direction: column; gap: 10px; }
-.role {
-  text-align: left; cursor: pointer; font-family: inherit;
-  background: var(--chip); color: var(--text);
-  border: 1px solid transparent; border-radius: 14px;
-  padding: 12px 16px;
-  display: flex; flex-direction: column; gap: 3px;
+#ask input:focus { border-color: var(--accent); }
+#aerr { color: #b0484d; font-size: 13.5px; min-height: 18px; }
+#ask .btn { text-align: center; margin-top: 4px; }
+
+/* 黑场开场：大字「伊甸」浮现再消退；点屏幕跳过 */
+#intro {
+  position: fixed; inset: 0; z-index: 50;
+  background: #05060c;
+  display: flex; align-items: center; justify-content: center;
+  opacity: 1; transition: opacity .7s ease;
 }
-.role b { font-size: 16.5px; }
-.role span { font-size: 13.5px; color: var(--dim); }
-.role i { font-size: 13px; color: var(--accent); font-style: normal; }
-.role.on { border-color: var(--accent); background: #e3e6f6; }
-#cmsg { color: #b0484d; font-size: 13.5px; min-height: 18px; }
-#create .btn { text-align: center; margin-top: 4px; }
+#intro.out { opacity: 0; }
+.ititle {
+  font-family: "KaiTi", "STKaiti", "楷体", serif;
+  font-size: min(30vw, 150px);
+  color: #e8eaf2; letter-spacing: .18em;
+  opacity: 0; transform: scale(1.12);
+  transition: opacity 1.6s ease, transform 2.4s ease;
+}
+.ititle.on { opacity: 1; transform: scale(1); }
+
+/* 对焦小游戏：热气球视力表替换外部视野图，按住变清晰 */
+.focuspad { width: 150px; margin: 0 auto; text-align: center; touch-action: none; user-select: none; cursor: pointer; }
+.focuspad svg { display: block; margin: 0 auto; overflow: visible; }
+.fhint { font-size: 13px; color: var(--dim); margin-top: 6px; }
+.focuspad.sharp .fhint { color: var(--accent); }
 
 /* 剧情块：只有新追加的一段带淡入，重画历史段不闪 */
 .block { margin-bottom: 18px; }
