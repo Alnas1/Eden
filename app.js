@@ -1,13 +1,17 @@
-/* ===== EDEN 剧情引擎 v5 =====
- * v4：捏人(名字+身份卡)、切片世界(流速/三相位后台运行)、need、enter/stay/dispatch。
- * v5：每个世界独立图片+配色(themes)、收藏改「箱子」(无锁定占位，背包可移入)、
- *     删卡片 CABIN STATUS/舱室状态两行、页签行常驻 ✎编辑页 与 ∞ 入口。
+/* ===== EDEN 剧情引擎 v7 =====
+ * v4：切片世界(流速/相位后台)、need、enter/stay/dispatch。
+ * v5：世界皮肤、箱子、页签入口。 v6：编辑页世界表+机制字段合并。
+ * v7：新开场替代捏人——黑场大字「伊甸」→ 滴滴音效(sfx)→ 热气球对焦小游戏(focus)
+ *     → 复诵姓名/性别/年龄(ask，年龄数字，余额=(120-年龄)/7天)→ 合同。身份卡已删。
+ * 新节点字段：sfx "beep" | focus {ok,no} | ask "profile" | add 数字(余额+，如味觉换7天)
+ * 新占位符：{年限}=120-年龄 {性别}（{身份}已废弃）
  */
 (function () {
   'use strict';
 
   var SAVE_KEY = '***';
   var CUSTOM_KEY = '***';
+  var AVG_LIFE = 120;
 
   var D = JSON.parse(JSON.stringify(window.EDEN_DATA));
 
@@ -36,6 +40,31 @@
 
   function rnd(a, b) { return a + Math.random() * (b - a); }
 
+  /* ---- 合成音效：不需要音频文件；首次触屏后才有播放权限 ---- */
+  var actx = null;
+  function audio() {
+    if (!actx) { try { actx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { actx = null; } }
+    if (actx && actx.state === 'suspended') actx.resume();
+    return actx;
+  }
+  document.addEventListener('pointerdown', function once() { audio(); document.removeEventListener('pointerdown', once); });
+  function tone(f, d, type, at) {
+    var ac = audio(); if (!ac) return;
+    var o = ac.createOscillator(), g = ac.createGain(), t = ac.currentTime + (at || 0);
+    o.type = type || 'sine'; o.frequency.value = f;
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(0.12, t + 0.012);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + d);
+    o.connect(g); g.connect(ac.destination);
+    o.start(t); o.stop(t + d + 0.05);
+  }
+  function playSfx(kind) {
+    if (kind === 'beep') {           // 哔哔——滴滴滴……
+      tone(700, 0.12, 'square', 0); tone(700, 0.12, 'square', 0.24);
+      tone(1150, 0.07, 'sine', 0.62); tone(1150, 0.07, 'sine', 0.95); tone(1150, 0.07, 'sine', 1.28);
+    }
+  }
+
   /* ---- 切片：流速与相位在后台运行，永不弹窗解释 ---- */
   function newSlice(name) {
     var w = (D.worlds || {})[name] || { rate: [1, 1], phases: { '常态': [30, 30] } };
@@ -60,7 +89,7 @@
     if (!s || !s.node || !D.nodes[s.node]) {
       s = {
         pod: String(Math.floor(Math.random() * 1000)).padStart(3, '0'),
-        day: 0, node: D.start, feed: [], items: [], collect: [], box: [],
+        day: 0, years: 0, quiz: 0, node: D.start, feed: [], items: [], collect: [], box: [],
         flags: {}, status: '正常运行', tab: 'log',
         char: null, slice: null, world: '舰内'
       };
@@ -76,6 +105,7 @@
   function applyNode(node, s) {
     if (!node) return;
     if (typeof node.days === 'number') s.day = node.days;
+    if (typeof node.add === 'number') s.day = Math.max(0, s.day + node.add);
     if (node.status) s.status = node.status;
     if (node.enter && D.worlds && D.worlds[node.enter]) { s.slice = newSlice(node.enter); s.world = node.enter; }
     if (node.world) s.world = node.world;
@@ -98,11 +128,12 @@
   function save() { localStorage.setItem(SAVE_KEY, JSON.stringify(state)); }
   save();
 
-  /* 文本占位符：??? 舱号；{名字} {身份} {余额} {停留} {扣减} {相位} */
+  /* 文本占位符：??? 舱号；{名字} {性别} {年限} {余额} {停留} {扣减} {相位} */
   function sub(text) {
     var s = String(text).replace(/\?\?\?/g, state.pod);
     s = s.replace(/\{名字\}/g, state.char ? state.char.name : '???');
-    s = s.replace(/\{身份\}/g, state.char ? state.char.rname : '???');
+    s = s.replace(/\{性别\}/g, state.char ? state.char.sex : '???');
+    s = s.replace(/\{年限\}/g, state.years || '???');
     s = s.replace(/\{余额\}/g, state.day);
     if (state.slice) {
       s = s.replace(/\{停留\}/g, state.slice.spent);
@@ -153,7 +184,7 @@
     var box = el('div', 'block' + (enter ? ' enter' : ''));
     if (node.speaker) box.appendChild(el('h2', null, esc(sub(node.speaker))));
     (node.text || []).forEach(function (p) {
-      var isSys = /^[【—（]|摘要/.test(p);
+      var isSys = /^[【—（哔滴]|摘要/.test(p);
       box.appendChild(el('p', isSys ? 'sys' : null, esc(sub(p))));
     });
     (node.gain || []).forEach(function (i) {
@@ -171,41 +202,131 @@
   /* log 页：feed 常驻，点选项只追加新段落 + 换尾部按钮，整屏不重画（防闪） */
   var feedEl = null;
   var tailEl = null;
+  var focusHolder = null;
 
   function renderTail() {
     if (tailEl && tailEl.parentNode) tailEl.parentNode.removeChild(tailEl);
     tailEl = el('div', 'choice-list');
     var cur = D.nodes[state.node];
 
-    if (cur && cur.end) {
-      tailEl.appendChild(el('div', 'endcard',
-        '<b>' + esc(cur.endnote || '第一章 · 完') + '</b><br>倒计时已经开始了，' + esc(state.pod) + ' 号。<br>' +
-        '后面的章节还没有出版——你可以在 dev.html 编辑页自己写一章，<br>导出后发给 AI 合进正式版。'));
-      var again = el('button', 'btn plain', '重新开始（清掉存档）');
-      again.onclick = reset;
-      tailEl.appendChild(again);
-    } else if (cur && cur.choices && cur.choices.length) {
-      var shown = cur.choices.filter(function (c) { return needOk(c.need); });
-      shown.forEach(function (c) {
-        var b = el('button', 'btn', esc(sub(c.t)));
-        b.onclick = function () { go(c.to); };
-        tailEl.appendChild(b);
-      });
-      if (!shown.length) {
-        var w = el('button', 'btn plain', '继 续');
-        w.onclick = function () { go(cur.next || state.node); };
-        tailEl.appendChild(w);
-      }
-    } else if (cur && cur.next) {
-      var cont = el('button', 'btn plain', '继 续');
-      cont.onclick = function () { go(cur.next); };
-      tailEl.appendChild(cont);
+    if (cur && cur.focus) {
+      focusHolder = el('div', 'choice-list');
+      tailEl.appendChild(focusHolder);
+      renderFocusCard(cur);
     } else {
-      var back = el('button', 'btn plain', '回到 log');
-      back.onclick = function () { state.tab = 'log'; save(); render(); };
-      tailEl.appendChild(back);
+      focusHolder = null;
+      renderFocusCard(null);
+      if (cur && cur.end) {
+        tailEl.appendChild(el('div', 'endcard',
+          '<b>' + esc(cur.endnote || '第一章 · 完') + '</b><br>倒计时已经开始了，' + esc(state.pod) + ' 号。<br>' +
+          '后面的章节还没有出版——你可以在 dev.html 编辑页自己写一章，<br>导出后发给 AI 合进正式版。'));
+        var again = el('button', 'btn plain', '重新开始（清掉存档）');
+        again.onclick = reset;
+        tailEl.appendChild(again);
+      } else if (cur && cur.ask) {
+        if (!state.char) {
+          var b0 = el('button', 'btn', '（开口复诵）');
+          b0.onclick = openAsk;
+          tailEl.appendChild(b0);
+        } else if (cur.next) {
+          var b1 = el('button', 'btn plain', '继 续');
+          b1.onclick = function () { go(cur.next); };
+          tailEl.appendChild(b1);
+        }
+      } else if (cur && cur.choices && cur.choices.length) {
+        var shown = cur.choices.filter(function (c) { return needOk(c.need); });
+        shown.forEach(function (c) {
+          var b = el('button', 'btn', esc(sub(c.t)));
+          b.onclick = function () { go(c.to); };
+          tailEl.appendChild(b);
+        });
+        if (!shown.length) {
+          var w = el('button', 'btn plain', '继 续');
+          w.onclick = function () { go(cur.next || state.node); };
+          tailEl.appendChild(w);
+        }
+      } else if (cur && cur.next) {
+        var cont = el('button', 'btn plain', '继 续');
+        cont.onclick = function () { go(cur.next); };
+        tailEl.appendChild(cont);
+      } else {
+        var back = el('button', 'btn plain', '回到 log');
+        back.onclick = function () { state.tab = 'log'; save(); render(); };
+        tailEl.appendChild(back);
+      }
     }
     $view.appendChild(tailEl);
+  }
+
+  /* 对焦小游戏：把顶部「外部视野」画面换成热气球视力表，按住画面逐渐变清晰 */
+  function renderFocusCard(cur) {
+    var vpEl = document.getElementById('viewport');
+    var imgEl = document.getElementById('vpimg');
+    var tiEl = document.getElementById('vptitle');
+    var old = document.getElementById('focuspad');
+    if (old) old.parentNode.removeChild(old);
+    if (!cur || !cur.focus) {
+      if (imgEl) imgEl.style.display = '';
+      if (tiEl) tiEl.style.display = '';
+      return;
+    }
+    if (imgEl) imgEl.style.display = 'none';
+    if (tiEl) tiEl.style.display = 'none';
+
+    var pad = el('div', 'focuspad');
+    pad.id = 'focuspad';
+    pad.innerHTML =
+      '<svg viewBox="0 0 130 150" width="150" height="172">' +
+      '<g class="fg">' +
+      '<circle cx="65" cy="55" r="46" fill="#eef0f8" stroke="#9aa0c8" stroke-width="2.5"/>' +
+      '<path d="M25 46 Q65 10 105 46" stroke="#5f67e0" stroke-width="3" fill="none" opacity=".7"/>' +
+      '<path d="M42 20 Q65 8 88 20" stroke="#c3c7da" stroke-width="2" fill="none"/>' +
+      '<text x="65" y="72" text-anchor="middle" font-size="34" font-weight="700" fill="#1c1e26">' + state.quiz + '</text>' +
+      '<line x1="47" y1="98" x2="56" y2="118" stroke="#9aa0c8" stroke-width="2"/>' +
+      '<line x1="83" y1="98" x2="74" y2="118" stroke="#9aa0c8" stroke-width="2"/>' +
+      '<rect x="53" y="118" width="24" height="16" rx="3" fill="#b79a6a" stroke="#8a6f4d" stroke-width="2"/>' +
+      '</g></svg>' +
+      '<div class="fhint">按住画面 · 把热气球拧到清晰</div>';
+    vpEl.appendChild(pad);
+
+    var fg = pad.querySelector('.fg');
+    var hint = pad.querySelector('.fhint');
+    var blur = 16, timer = null, sharp = false;
+    fg.style.filter = 'blur(' + blur + 'px)';
+
+    function stopPress() { if (timer) { clearInterval(timer); timer = null; } }
+    function reveal() {
+      if (!focusHolder || focusHolder.childNodes.length) return;
+      var set = [state.quiz];
+      while (set.length < 3) {
+        var r = 10 + Math.floor(Math.random() * 90);
+        if (set.indexOf(r) < 0) set.push(r);
+      }
+      set.sort(function () { return Math.random() - 0.5; });
+      set.forEach(function (n) {
+        var b = el('button', 'btn', esc(String(n)));
+        b.onclick = function () { go(n === state.quiz ? cur.focus.ok : cur.focus.no); };
+        focusHolder.appendChild(b);
+      });
+      if (hint) hint.textContent = '看清了。把数字报给伊甸——往下滑。';
+    }
+    pad.addEventListener('pointerdown', function (e) {
+      e.preventDefault();
+      audio();
+      stopPress();
+      timer = setInterval(function () {
+        blur -= 1.2;
+        if (blur <= 0) {
+          blur = 0; stopPress();
+          fg.style.filter = 'none';
+          if (!sharp) { sharp = true; pad.classList.add('sharp'); reveal(); }
+        } else {
+          fg.style.filter = 'blur(' + blur + 'px)';
+        }
+      }, 70);
+    });
+    window.addEventListener('pointerup', stopPress);
+    window.addEventListener('pointercancel', stopPress);
   }
 
   function rebuildFeed() {
@@ -237,6 +358,7 @@
     if (!node) { return; }
     applyNode(node, state);
     state.node = D.nodes[id] && node !== D.nodes[id] ? idOf(node) : id;
+    if (node.focus) { state.quiz = 10 + Math.floor(Math.random() * 90); }
     state.feed.push(state.node);
     var wasLog = state.tab === 'log';
     state.tab = 'log';
@@ -252,6 +374,8 @@
       rebuildFeed();
     }
     window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+    if (node.sfx) playSfx(node.sfx);
+    if (node.ask) openAsk();
   }
 
   function idOf(node) {
@@ -320,7 +444,7 @@
   }
 
   function reset() {
-    if (!confirm('重新开始？这会清掉本机的存档（捏人、背包、箱子、天数都归零，舱号会换一个新的）。')) return;
+    if (!confirm('重新开始？这会清掉本机的存档（开场档案、背包、箱子、天数都归零，舱号会换一个新的）。')) return;
     localStorage.removeItem(SAVE_KEY);
     location.reload();
   }
@@ -377,44 +501,68 @@
   document.getElementById('pinreset').onclick = reset;
   document.getElementById('tabreset').onclick = reset;
 
-  /* ===== 捏人（轻度：名字 + 一张身份卡），没登记就不醒来 ===== */
-  var crt = document.getElementById('create');
-  var picked = null;
-
-  function buildCreate() {
-    var roles = D.identities || [];
-    var box = document.getElementById('croles');
-    box.innerHTML = '';
-    roles.forEach(function (r) {
-      var b = el('button', 'role');
-      b.innerHTML = '<b>' + esc(r.name) + '</b><span>' + esc(r.tag) + '</span><i>' + esc(r.perk) + '</i>';
-      b.onclick = function () {
-        picked = r;
-        Array.prototype.forEach.call(box.children, function (x) { x.classList.remove('on'); });
-        b.classList.add('on');
-      };
-      box.appendChild(b);
-    });
-    document.getElementById('cok').onclick = function () {
-      if (!picked) { say('先挑一张身份卡——伊甸连这个都要存档。'); return; }
-      var nm = (document.getElementById('cname').value || '').trim() || ('EDEN/' + state.pod);
-      state.char = { name: nm, rid: picked.id, rname: picked.name };
-      state.flags['身份'] = picked.name;
-      save();
-      crt.parentNode.removeChild(crt);
-      document.body.classList.remove('locked');
-      renderHead();
-      rebuildFeed();
-      window.scrollTo(0, document.body.scrollHeight);
-    };
-    crt.hidden = false;
+  /* ===== 黑场开场：大字「伊甸」浮现 → 消退 → 露出正常界面；点屏幕跳过 ===== */
+  var introEl = document.getElementById('intro');
+  function playIntro(done) {
+    var it = introEl.querySelector('.ititle');
+    var timers = [], finished = false;
+    introEl.hidden = false;
     document.body.classList.add('locked');
+    function fin() {
+      if (finished) return;
+      finished = true;
+      timers.forEach(clearTimeout); timers = [];
+      it.classList.remove('on');
+      introEl.classList.add('out');
+      setTimeout(function () {
+        introEl.hidden = true;
+        introEl.classList.remove('out');
+        document.body.classList.remove('locked');
+        introEl.removeEventListener('click', fin);
+        done();
+      }, 700);
+    }
+    introEl.addEventListener('click', fin);
+    timers.push(setTimeout(function () { it.classList.add('on'); }, 500));
+    timers.push(setTimeout(function () { it.classList.remove('on'); }, 3000));
+    timers.push(setTimeout(fin, 4900));
   }
 
-  function say(m) { document.getElementById('cmsg').textContent = m; }
+  /* ===== 复诵档案：姓名/性别/年龄；年龄必须是数字，决定折算余额 ===== */
+  var askEl = document.getElementById('ask');
+  function openAsk() {
+    if (state.char) return;
+    askEl.hidden = false;
+    document.body.classList.add('locked');
+    document.getElementById('aok').onclick = function () {
+      var nm = (document.getElementById('aname').value || '').trim() || ('EDEN/' + state.pod);
+      var sx = (document.getElementById('asex').value || '').trim() || '未登记';
+      var txt = (document.getElementById('aage').value || '').trim();
+      var ag = /^\d{1,3}$/.test(txt) ? parseInt(txt, 10) : NaN;
+      if (!(ag >= 1 && ag < AVG_LIFE)) {
+        document.getElementById('aerr').textContent = '伊甸没能识别这个年龄——请填写 1 到 ' + (AVG_LIFE - 1) + ' 之间的数字。';
+        return;
+      }
+      state.char = { name: nm, sex: sx, age: ag };
+      state.years = AVG_LIFE - ag;
+      state.day = Math.max(1, Math.round((AVG_LIFE - ag) / 7));
+      save();
+      askEl.hidden = true;
+      document.body.classList.remove('locked');
+      var t = D.nodes[state.node];
+      if (t && t.ask && t.next) go(t.next); else render();
+    };
+  }
 
-  if (state.char) render();
-  else buildCreate();
+  if (state.char) {
+    render();
+  } else {
+    playIntro(function () {
+      render();
+      var n = D.nodes[state.node];
+      if (n && n.sfx) playSfx(n.sfx);
+    });
+  }
 
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('sw.js').catch(function () {});
