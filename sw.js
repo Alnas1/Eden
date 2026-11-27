@@ -1,10 +1,10 @@
-/* EDEN 离线缓存 v4
+/* EDEN 离线缓存 v5
  * 规则：网页本体=网络优先、失败回退缓存（改版能及时生效）；
  *       静态资源=先秒开缓存、后台悄悄更新写回（stale-while-revalidate）。
  */
-const V = 'eden-v4';
+const V = 'eden-v5';
 const CORE = ['./', './index.html', './style.css', './app.js', './data.js',
-              './manifest.webmanifest', './icon.svg', './space.svg'];
+              './manifest.webmanifest', './icon.svg', './space.svg', './gray.svg'];
 
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(V).then(c => c.addAll(CORE)).then(() => self.skipWaiting()));
