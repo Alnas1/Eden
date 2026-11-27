@@ -110,6 +110,46 @@ body {
 /* 正文（整页滚动，空间尽量留给剧情） */
 #view { flex: 1; padding: 12px 18px calc(36px + env(safe-area-inset-bottom)); }
 
+/* 捏人（苏醒档案）：不登记就不醒来 */
+body.locked { overflow: hidden; }
+#create {
+  position: fixed; inset: 0; z-index: 30;
+  background: rgba(223, 226, 238, .92);
+  backdrop-filter: blur(10px);
+  display: flex; align-items: center; justify-content: center;
+  padding: 20px;
+}
+.cu {
+  width: 100%; max-width: 420px;
+  background: var(--shell); border-radius: 20px;
+  padding: 26px 24px 24px;
+  box-shadow: 0 12px 40px rgba(40, 44, 80, .18);
+  display: flex; flex-direction: column; gap: 12px;
+}
+.cu-k { color: var(--dim); font-size: 12.5px; letter-spacing: 2px; }
+.cu h2 { font-size: 20px; font-weight: 800; line-height: 1.4; }
+.cu-note { color: var(--dim); font-size: 13px; }
+#create input {
+  font-family: inherit; font-size: 17px; color: var(--text);
+  background: var(--chip); border: 1px solid var(--line); border-radius: 12px;
+  padding: 13px 16px; outline: none;
+}
+#create input:focus { border-color: var(--accent); }
+.roles { display: flex; flex-direction: column; gap: 10px; }
+.role {
+  text-align: left; cursor: pointer; font-family: inherit;
+  background: var(--chip); color: var(--text);
+  border: 1px solid transparent; border-radius: 14px;
+  padding: 12px 16px;
+  display: flex; flex-direction: column; gap: 3px;
+}
+.role b { font-size: 16.5px; }
+.role span { font-size: 13.5px; color: var(--dim); }
+.role i { font-size: 13px; color: var(--accent); font-style: normal; }
+.role.on { border-color: var(--accent); background: #e3e6f6; }
+#cmsg { color: #b0484d; font-size: 13.5px; min-height: 18px; }
+#create .btn { text-align: center; margin-top: 4px; }
+
 /* 剧情块：只有新追加的一段带淡入，重画历史段不闪 */
 .block { margin-bottom: 18px; }
 .block.enter { animation: fadein .35s ease; }
