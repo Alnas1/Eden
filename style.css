@@ -15,7 +15,7 @@
 * { margin: 0; padding: 0; box-sizing: border-box; }
 html, body { height: 100%; }
 
-/* 修 bug：v6 及以前 #create 用 display:flex 盖掉了 hidden 属性，
+/* 修 bug：v6 及以前旧苏醒弹窗用 display:flex 盖掉了 hidden 属性，
    脚本一挂弹窗就变死弹窗。此后一律 hidden 属性控制显隐。 */
 [hidden] { display: none !important; }
 
