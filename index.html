@@ -28,16 +28,22 @@
   <main id="view"></main>
 </div>
 
-<div id="create" hidden>
+<!-- 黑场开场：大字「伊甸」浮现再消退，点屏幕可跳过 -->
+<div id="intro" hidden>
+  <div class="ititle">伊甸</div>
+</div>
+
+<!-- 复诵档案：姓名 / 性别 / 年龄（只有年龄要求数字，年龄参与余额计算） -->
+<div id="ask" hidden>
   <div class="cu">
-    <div class="cu-k">伊甸 · 苏醒档案</div>
-    <h2>在正式称呼您之前，</h2>
-    <h2>需要知道该用哪个称呼。</h2>
-    <p class="cu-note">——以下信息由您生前自行申报，伊甸概不负责。</p>
-    <input id="cname" maxlength="8" placeholder="怎么称呼？（留空 = 填编号）" autocomplete="off">
-    <div class="roles" id="croles"></div>
-    <div id="cmsg"></div>
-    <button class="btn" id="cok">签署档案，醒来</button>
+    <div class="cu-k">伊甸 · 复诵</div>
+    <h2>请向我复诵您的<br>姓名、性别、年龄。</h2>
+    <p class="cu-note">——其中只有年龄要求是数字，它会进入之后的折算。</p>
+    <input id="aname" maxlength="12" placeholder="姓名（留空 = 填编号）" autocomplete="off">
+    <input id="asex" maxlength="6" placeholder="性别" autocomplete="off">
+    <input id="aage" inputmode="numeric" placeholder="年龄（数字）" autocomplete="off">
+    <div id="aerr"></div>
+    <button class="btn" id="aok">复 诵</button>
   </div>
 </div>
 
