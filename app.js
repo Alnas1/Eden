@@ -30,7 +30,7 @@
       s = {
         pod: String(Math.floor(Math.random() * 1000)).padStart(3, '0'),
         day: 0, node: D.start, feed: [], items: [], collect: [],
-        flags: {}, status: '正常运行', tab: 'log', auto: false
+        flags: {}, status: '正常运行', tab: 'log'
       };
       applyNode(D.nodes[D.start], s);
       s.feed = [D.start];
@@ -60,7 +60,6 @@
 
   var TABS = [
     { id: 'log', label: 'log' },
-    { id: 'auto', label: 'Auto', toggle: true },
     { id: 'map', label: '地图' },
     { id: 'hour', label: '沙漏' },
     { id: 'bag', label: '背包' },
@@ -71,13 +70,9 @@
     $tabs.innerHTML = '';
     TABS.forEach(function (t) {
       var b = document.createElement('button');
-      b.className = 'tab' + (t.toggle ? (state.auto ? ' on' : '') : (state.tab === t.id ? ' active' : ''));
+      b.className = 'tab' + (state.tab === t.id ? ' active' : '');
       b.textContent = t.label;
-      b.onclick = function () {
-        if (t.toggle) { state.auto = !state.auto; }
-        else { state.tab = t.id; }
-        save(); render();
-      };
+      b.onclick = function () { state.tab = t.id; save(); render(); };
       $tabs.appendChild(b);
     });
   }
@@ -89,8 +84,8 @@
     return e;
   }
 
-  function blockNode(node) {
-    var box = el('div', 'block');
+  function blockNode(node, enter) {
+    var box = el('div', 'block' + (enter ? ' enter' : ''));
     if (node.speaker) box.appendChild(el('h2', null, esc(pod(node.speaker))));
     (node.text || []).forEach(function (p) {
       var isSys = /^[【—（]|摘要/.test(p);
@@ -108,52 +103,72 @@
     });
   }
 
+  /* log 页：feed 常驻，点选项只追加新段落 + 换尾部按钮，整屏不重画（防闪） */
+  var feedEl = null;
+  var tailEl = null;
+
+  function renderTail() {
+    if (tailEl && tailEl.parentNode) tailEl.parentNode.removeChild(tailEl);
+    tailEl = el('div', 'choice-list');
+    var cur = D.nodes[state.node];
+
+    if (cur && cur.end) {
+      tailEl.appendChild(el('div', 'endcard',
+        '<b>第一章 · 完</b><br>倒计时已经开始了，' + esc(state.pod) + ' 号。<br>' +
+        '第二章还没有出版——你可以在 dev.html 编辑页自己写一章，<br>导出后发给 AI 合进正式版。'));
+      var again = el('button', 'btn plain', '重新开始（清掉存档）');
+      again.onclick = reset;
+      tailEl.appendChild(again);
+    } else if (cur && cur.choices && cur.choices.length) {
+      cur.choices.forEach(function (c) {
+        var b = el('button', 'btn', esc(pod(c.t)));
+        b.onclick = function () { go(c.to); };
+        tailEl.appendChild(b);
+      });
+    } else if (cur && cur.next) {
+      var cont = el('button', 'btn plain', '继 续');
+      cont.onclick = function () { go(cur.next); };
+      tailEl.appendChild(cont);
+    } else {
+      var back = el('button', 'btn plain', '回到 log');
+      back.onclick = function () { state.tab = 'log'; save(); render(); };
+      tailEl.appendChild(back);
+    }
+    $view.appendChild(tailEl);
+  }
+
+  function rebuildFeed() {
+    $view.innerHTML = '';
+    tailEl = null;
+    feedEl = el('div');
+    $view.appendChild(feedEl);
+    state.feed.forEach(function (id) {
+      var n = D.nodes[id];
+      if (n) feedEl.appendChild(blockNode(n, false));
+    });
+    renderTail();
+  }
+
   function go(id) {
     var node = D.nodes[id];
     if (!node) { return; }
     applyNode(node, state);
     state.node = id;
     state.feed.push(id);
-    if (state.tab !== 'log') state.tab = 'log';
-    save(); render();
-  }
+    var wasLog = state.tab === 'log';
+    state.tab = 'log';
+    save();
 
-  function renderLog() {
-    var frag = document.createDocumentFragment();
-    state.feed.forEach(function (id) {
-      var n = D.nodes[id];
-      if (n) frag.appendChild(blockNode(n));
-    });
-    var cur = D.nodes[state.node];
-    var tail = el('div', 'choice-list');
-
-    if (cur && cur.end) {
-      tail.appendChild(el('div', 'endcard',
-        '<b>第一章 · 完</b><br>倒计时已经开始了，' + esc(state.pod) + ' 号。<br>' +
-        '第二章还没有出版——你可以在 dev.html 编辑页自己写一章，<br>导出后发给 AI 合进正式版。'));
-      var again = el('button', 'btn plain', '重新开始（清掉存档）');
-      again.onclick = reset;
-      tail.appendChild(again);
-    } else if (cur && cur.choices && cur.choices.length) {
-      cur.choices.forEach(function (c) {
-        var b = el('button', 'btn', esc(pod(c.t)));
-        b.onclick = function () { go(c.to); };
-        tail.appendChild(b);
-      });
-    } else if (cur && cur.next) {
-      var cont = el('button', 'btn plain', '继 续');
-      cont.onclick = function () { go(cur.next); };
-      tail.appendChild(cont);
-      if (state.auto) {
-        window.__edenAuto = setTimeout(function () { go(cur.next); }, 2400);
-      }
+    document.getElementById('cabinstatus').textContent = pod(state.status);
+    document.getElementById('pincabin').textContent = pod(state.status);
+    renderTabs();
+    if (wasLog && feedEl && feedEl.parentNode === $view) {
+      feedEl.appendChild(blockNode(node, true));
+      renderTail();
     } else {
-      var back = el('button', 'btn plain', '回到 log');
-      back.onclick = function () { state.tab = 'log'; save(); render(); };
-      tail.appendChild(back);
+      rebuildFeed();
     }
-    frag.appendChild(tail);
-    $view.appendChild(frag);
+    window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
   }
 
   function renderMap() {
@@ -210,27 +225,30 @@
   }
 
   function render() {
-    if (window.__edenAuto) { clearTimeout(window.__edenAuto); window.__edenAuto = null; }
     document.getElementById('podnum').textContent = state.pod;
     document.getElementById('cabinstatus').textContent = pod(state.status);
     document.getElementById('pincabin').textContent = pod(state.status);
     renderTabs();
-    $view.innerHTML = '';
-    if (state.tab === 'log') renderLog();
-    else if (state.tab === 'map') renderMap();
-    else if (state.tab === 'hour') renderHour();
-    else if (state.tab === 'bag') renderBag();
-    else if (state.tab === 'album') renderAlbum();
-    if (state.tab === 'log') window.scrollTo(0, document.body.scrollHeight);
-    else window.scrollTo(0, 0);
+    if (state.tab === 'log') {
+      rebuildFeed();
+      window.scrollTo(0, document.body.scrollHeight);
+    } else {
+      feedEl = null; tailEl = null;
+      $view.innerHTML = '';
+      if (state.tab === 'map') renderMap();
+      else if (state.tab === 'hour') renderHour();
+      else if (state.tab === 'bag') renderBag();
+      else if (state.tab === 'album') renderAlbum();
+      window.scrollTo(0, 0);
+    }
     onScroll();
   }
 
-  /* 往上滑：大卡片滑出屏幕后，编号+状态收成顶部细横幅 */
-  var card = document.getElementById('statuscard');
+  /* 往上滑：外部视野图片滑出一半，顶部条幅就开始落下 */
+  var vp = document.getElementById('viewport');
   var pin = document.getElementById('pinbanner');
   function onScroll() {
-    var show = card.getBoundingClientRect().bottom <= 10;
+    var show = vp.getBoundingClientRect().bottom <= vp.offsetHeight * 0.5;
     pin.classList.toggle('show', show);
     document.documentElement.style.setProperty('--pinh', show ? pin.offsetHeight + 'px' : '0px');
   }
