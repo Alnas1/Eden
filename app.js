@@ -154,7 +154,6 @@
     }
     frag.appendChild(tail);
     $view.appendChild(frag);
-    $view.scrollTop = $view.scrollHeight;
   }
 
   function renderMap() {
@@ -214,6 +213,7 @@
     if (window.__edenAuto) { clearTimeout(window.__edenAuto); window.__edenAuto = null; }
     document.getElementById('podnum').textContent = state.pod;
     document.getElementById('cabinstatus').textContent = pod(state.status);
+    document.getElementById('pincabin').textContent = pod(state.status);
     renderTabs();
     $view.innerHTML = '';
     if (state.tab === 'log') renderLog();
@@ -221,9 +221,24 @@
     else if (state.tab === 'hour') renderHour();
     else if (state.tab === 'bag') renderBag();
     else if (state.tab === 'album') renderAlbum();
+    if (state.tab === 'log') window.scrollTo(0, document.body.scrollHeight);
+    else window.scrollTo(0, 0);
+    onScroll();
   }
 
+  /* 往上滑：大卡片滑出屏幕后，编号+状态收成顶部细横幅 */
+  var card = document.getElementById('statuscard');
+  var pin = document.getElementById('pinbanner');
+  function onScroll() {
+    var show = card.getBoundingClientRect().bottom <= 10;
+    pin.classList.toggle('show', show);
+    document.documentElement.style.setProperty('--pinh', show ? pin.offsetHeight + 'px' : '0px');
+  }
+  window.addEventListener('scroll', onScroll, { passive: true });
+  window.addEventListener('resize', onScroll);
+
   document.getElementById('resetbtn').onclick = reset;
+  document.getElementById('pinreset').onclick = reset;
   render();
 
   if ('serviceWorker' in navigator) {
