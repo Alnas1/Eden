@@ -1,6 +1,7 @@
-/* ===== EDEN 剧情引擎 v4 =====
- * 新增：捏人(轻度：名字+身份卡)、切片世界(流速/三相位在后台运行、不弹提示)、
- *      选项条件 need、节点 enter/stay/dispatch、结算文本占位符。
+/* ===== EDEN 剧情引擎 v5 =====
+ * v4：捏人(名字+身份卡)、切片世界(流速/三相位后台运行)、need、enter/stay/dispatch。
+ * v5：每个世界独立图片+配色(themes)、收藏改「箱子」(无锁定占位，背包可移入)、
+ *     删卡片 CABIN STATUS/舱室状态两行、页签行常驻 ✎编辑页 与 ∞ 入口。
  */
 (function () {
   'use strict';
@@ -52,13 +53,16 @@
     if (!s || !s.node || !D.nodes[s.node]) {
       s = {
         pod: String(Math.floor(Math.random() * 1000)).padStart(3, '0'),
-        day: 0, node: D.start, feed: [], items: [], collect: [],
+        day: 0, node: D.start, feed: [], items: [], collect: [], box: [],
         flags: {}, status: '正常运行', tab: 'log',
-        char: null, slice: null
+        char: null, slice: null, world: '舰内'
       };
       applyNode(D.nodes[D.start], s);
       s.feed = [D.start];
     }
+    if (!s.box) s.box = [];                       /* v5 老档迁移 */
+    if (!s.world) s.world = (s.slice && s.slice.name) || '舰内';
+    if (s.tab === 'album') s.tab = 'box';
     return s;
   }
 
@@ -66,7 +70,8 @@
     if (!node) return;
     if (typeof node.days === 'number') s.day = node.days;
     if (node.status) s.status = node.status;
-    if (node.enter && D.worlds && D.worlds[node.enter]) s.slice = newSlice(node.enter);
+    if (node.enter && D.worlds && D.worlds[node.enter]) { s.slice = newSlice(node.enter); s.world = node.enter; }
+    if (node.world) s.world = node.world;
     if (typeof node.stay === 'number') {
       if (s.slice) {
         var ch = Math.max(1, Math.round(node.stay / s.slice.rate));
@@ -115,17 +120,18 @@
     { id: 'map', label: '地图' },
     { id: 'hour', label: '沙漏' },
     { id: 'bag', label: '背包' },
-    { id: 'album', label: '收藏' }
+    { id: 'box', label: '箱子' }
   ];
 
   function renderTabs() {
-    $tabs.innerHTML = '';
+    var tools = $tabs.querySelector('.tabtools');
+    Array.prototype.slice.call($tabs.querySelectorAll('.tab')).forEach(function (x) { $tabs.removeChild(x); });
     TABS.forEach(function (t) {
       var b = document.createElement('button');
       b.className = 'tab' + (state.tab === t.id ? ' active' : '');
       b.textContent = t.label;
       b.onclick = function () { state.tab = t.id; save(); render(); };
-      $tabs.appendChild(b);
+      $tabs.insertBefore(b, tools);
     });
   }
 
@@ -229,7 +235,7 @@
     state.tab = 'log';
     save();
 
-    document.getElementById('cabinstatus').textContent = sub(state.status);
+    applyTheme();
     document.getElementById('pincabin').textContent = sub(state.status);
     renderTabs();
     if (wasLog && feedEl && feedEl.parentNode === $view) {
@@ -247,9 +253,9 @@
   }
 
   function renderMap() {
-    var sliceName = state.slice && state.slice.name;
+    var atShip = !state.world || state.world === '舰内';
     (D.map || []).forEach(function (m) {
-      var here = (m.name === sliceName) || (m.here && !sliceName);
+      var here = atShip ? !!m.here : (m.name === state.world);
       var r = el('div', 'row' + (m.locked ? ' locked' : '') + (here ? ' here' : ''));
       r.appendChild(el('b', null, esc(sub(m.name))));
       r.appendChild(el('div', 'desc', esc(sub(m.desc || ''))));
@@ -272,41 +278,65 @@
     $view.appendChild(el('div', 'note', '天数只在剧情推进时变化——这一版先讲故事，不跑真实时间。'));
   }
 
+  /* 背包：还带在身上、可能用得上的东西；每一行可以移入箱子 */
   function renderBag() {
-    if (!state.items.length) { $view.appendChild(el('div', 'empty', '背包是空的。伊甸说，很快就不会了。')); return; }
-    state.items.forEach(function (name) {
+    if (!state.items.length) { $view.appendChild(el('div', 'empty', '背包是空的。东西都在箱子里了。')); return; }
+    state.items.forEach(function (name, i) {
       var it = D.items[name] || { icon: '📦', desc: '' };
       var r = el('div', 'row');
       r.appendChild(el('b', null, it.icon + ' ' + esc(sub(name))));
       if (it.desc) r.appendChild(el('div', 'desc', esc(sub(it.desc))));
+      var mv = el('button', 'movebtn', '移入箱子');
+      mv.onclick = function () {
+        state.items.splice(i, 1);
+        if (state.box.indexOf(name) < 0) state.box.push(name);
+        save(); render();
+      };
+      r.appendChild(mv);
       $view.appendChild(r);
     });
   }
 
-  function renderAlbum() {
-    var keys = Object.keys(D.collect || {});
-    if (!keys.length) { $view.appendChild(el('div', 'empty', '还没有可收藏的东西。')); return; }
-    keys.forEach(function (name) {
-      var c = D.collect[name];
-      var got = state.collect.indexOf(name) >= 0;
-      var r = el('div', 'row' + (got ? '' : ' locked'));
-      r.appendChild(el('b', null, (got ? c.icon : '❓') + ' ' + (got ? esc(name) : '？？？')));
-      if (got && c.desc) r.appendChild(el('div', 'desc', esc(c.desc)));
+  /* 箱子：就是箱子。剧情收藏品自动入库，背包移入的也在这一页；不放锁定占位 */
+  function renderBox() {
+    var got = [];
+    (state.collect || []).forEach(function (n) { if (got.indexOf(n) < 0) got.push(n); });
+    (state.box || []).forEach(function (n) { if (got.indexOf(n) < 0) got.push(n); });
+    if (!got.length) { $view.appendChild(el('div', 'empty', '箱子是空的。')); return; }
+    got.forEach(function (name) {
+      var c = (D.collect && D.collect[name]) || (D.items && D.items[name]) || { icon: '📦', desc: '' };
+      var r = el('div', 'row');
+      r.appendChild(el('b', null, (c.icon || '📦') + ' ' + esc(sub(name))));
+      if (c.desc) r.appendChild(el('div', 'desc', esc(sub(c.desc))));
       $view.appendChild(r);
     });
   }
 
   function reset() {
-    if (!confirm('重新开始？这会清掉本机的存档（捏人、背包、收藏、天数都归零，舱号会换一个新的）。')) return;
+    if (!confirm('重新开始？这会清掉本机的存档（捏人、背包、箱子、天数都归零，舱号会换一个新的）。')) return;
     localStorage.removeItem(SAVE_KEY);
     location.reload();
   }
 
   function renderHead() {
     document.getElementById('podnum').textContent = state.pod;
-    document.getElementById('cabinstatus').textContent = sub(state.status);
     document.getElementById('pincabin').textContent = sub(state.status);
+    applyTheme();
     renderTabs();
+  }
+
+  /* 每个世界一套图片+配色：D.worlds[世界名] = { img, label, theme:{CSS变量} } */
+  var appliedVars = [];
+  function applyTheme() {
+    var w = (D.worlds || {})[state.world] || {};
+    var th = w.theme || {};
+    appliedVars.forEach(function (k) { document.documentElement.style.removeProperty(k); });
+    appliedVars = Object.keys(th);
+    appliedVars.forEach(function (k) { document.documentElement.style.setProperty(k, th[k]); });
+    var img = w.img || 'space.svg';
+    var vi = document.getElementById('vpimg'); if (vi) vi.src = img;
+    var pi = document.getElementById('pbimg'); if (pi) pi.src = img;
+    var ti = document.getElementById('vptitle'); if (ti) ti.textContent = w.label || '太空舱 · 外部视野';
   }
 
   function render() {
@@ -320,7 +350,7 @@
       if (state.tab === 'map') renderMap();
       else if (state.tab === 'hour') renderHour();
       else if (state.tab === 'bag') renderBag();
-      else if (state.tab === 'album') renderAlbum();
+      else if (state.tab === 'box') renderBox();
       window.scrollTo(0, 0);
     }
     onScroll();
@@ -337,8 +367,8 @@
   window.addEventListener('scroll', onScroll, { passive: true });
   window.addEventListener('resize', onScroll);
 
-  document.getElementById('resetbtn').onclick = reset;
   document.getElementById('pinreset').onclick = reset;
+  document.getElementById('tabreset').onclick = reset;
 
   /* ===== 捏人（轻度：名字 + 一张身份卡），没登记就不醒来 ===== */
   var crt = document.getElementById('create');
