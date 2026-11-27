@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>EDEN</title>
+<meta name="theme-color" content="#e8eaf2">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="app">
+  <header class="topbar">
+    <div class="brand">EDEN / <span id="podnum">000</span></div>
+    <div class="san" id="san">在线</div>
+  </header>
+
+  <section class="status-card">
+    <div class="status-head">
+      <span>CABIN STATUS</span>
+      <button id="resetbtn" title="重新开始">∞</button>
+    </div>
+    <div class="status-icon">
+      <svg viewBox="0 0 64 64" width="58" height="58" fill="none" stroke="#565b73" stroke-width="2.4">
+        <circle cx="30" cy="34" r="9"/>
+        <circle cx="44" cy="22" r="3.4"/>
+        <path d="M13 45 C 8 30, 22 12, 40 12 C 52 12, 58 20, 56 28" stroke-linecap="round"/>
+      </svg>
+    </div>
+    <div class="status-title">太空舱 · 外部视野</div>
+    <div class="status-foot">
+      <span>舱室状态</span>
+      <b id="cabinstatus">正常运行</b>
+    </div>
+  </section>
+
+  <nav class="tabbar" id="tabbar"></nav>
+
+  <main id="view"></main>
+</div>
+<script src="data.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
