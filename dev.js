@@ -1,7 +1,7 @@
 /* ===== EDEN 编辑页逻辑（内容只存本机 localStorage） ===== */
 (function () {
   'use strict';
-  var CUSTOM_KEY = '***';
+  var CUSTOM_KEY = 'eden-content-v1';
   var BASE = window.EDEN_DATA || { nodes: {}, items: {}, collect: {} };
 
   var custom;
