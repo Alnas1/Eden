@@ -24,6 +24,13 @@
       Object.keys(custom.collect).forEach(function (id) { D.collect[id] = custom.collect[id]; });
     }
     if (custom && custom.map) { D.map = custom.map; }
+    // 世界也可被编辑页覆盖：按字段合并（只改图不必重写流速/相位）
+    if (custom && custom.worlds) {
+      D.worlds = D.worlds || {};
+      Object.keys(custom.worlds).forEach(function (name) {
+        D.worlds[name] = Object.assign({}, D.worlds[name] || {}, custom.worlds[name]);
+      });
+    }
     if (custom && custom.start) { D.start = custom.start; }
   } catch (e) { /* 坏数据就当没有 */ }
 
