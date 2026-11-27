@@ -29,6 +29,7 @@
 </head>
 <body>
 <h1>EDEN · 剧情编辑页</h1>
+<p style="margin:-6px 0 10px"><a href="index.html" style="color:#1f9d5b;text-decoration:none">◂ 返回游戏</a></p>
 <div class="hint">
   在这里改剧情、加节点，<b>不用写代码</b>。<br>
   改动只保存在<b>这台设备的浏览器</b>里（草稿本）；要变成手机上的正式版，请点「导出全部」，把 JSON 文本发给 AI 合并进 data.js 推仓库（出版印刷）。<br>
@@ -54,7 +55,7 @@
     <input id="f_status" placeholder="例如 正常运行">
     <label>获得物品（逗号分隔，需在下面物品表里有）</label>
     <input id="f_gain">
-    <label>解锁收藏（逗号分隔，需在下面收藏表里有）</label>
+    <label>收入箱子的收藏品（逗号分隔，需在下面收藏品表里有）</label>
     <input id="f_unlock">
     <div class="btnrow">
       <button id="btn_save">保存这个节点</button>
@@ -64,7 +65,7 @@
 
     <h1 style="margin-top:22px">物品表</h1>
     <textarea id="f_items" rows="5" placeholder="一行一个：名字|图标|描述&#10;剩余时间协议|📜|全文74页，有效部分4行。"></textarea>
-    <h1 style="margin-top:16px">收藏表</h1>
+    <h1 style="margin-top:16px">收藏品表（获得后自动进游戏里的「箱子」页）</h1>
     <textarea id="f_collect" rows="5" placeholder="一行一个：名字|图标|描述"></textarea>
     <div class="btnrow"><button id="btn_save_tables" class="gray">保存物品/收藏表</button></div>
   </div>
