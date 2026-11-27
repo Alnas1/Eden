@@ -9,8 +9,7 @@
   --dim: #70748a;
   --line: #c3c7da;
   --accent: #5f67e0;
-  --green-bg: #c9ecd7;
-  --green-tx: #1f9d5b;
+  --pinh: 0px; /* 收起横幅的高度，滚动时由 JS 设置 */
 }
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -28,7 +27,6 @@ body {
   margin: 0 auto;
   min-height: 100dvh;
   background: var(--shell);
-  border-radius: 0;
   display: flex;
   flex-direction: column;
   box-shadow: 0 0 40px rgba(40, 44, 80, .14);
@@ -37,24 +35,12 @@ body {
   #app { border-radius: 26px; margin: 14px auto; min-height: calc(100dvh - 28px); }
 }
 
-/* 顶栏 */
-.topbar {
-  display: flex; justify-content: space-between; align-items: center;
-  padding: calc(16px + env(safe-area-inset-top)) 20px 12px;
-}
-.brand { font-size: 22px; font-weight: 800; letter-spacing: .5px; }
-.san {
-  font-size: 13px; font-weight: 600;
-  color: var(--green-tx); background: var(--green-bg);
-  border-radius: 999px; padding: 4px 14px;
-}
-
-/* 状态大卡 */
+/* 状态大卡（顶部不再有编号行，编号收进滚动横幅里） */
 .status-card {
   background: var(--card);
   border-radius: 18px;
   padding: 16px 20px 14px;
-  margin: 4px 14px 10px;
+  margin: calc(10px + env(safe-area-inset-top)) 14px 10px;
 }
 .status-head {
   display: flex; justify-content: space-between; align-items: center;
@@ -64,8 +50,10 @@ body {
   background: none; border: none; cursor: pointer;
   color: var(--dim); font-size: 16px; padding: 2px 6px;
 }
-.status-icon { text-align: center; margin: 22px 0 12px; }
-.status-title { text-align: center; color: #4a4e63; font-size: 19px; font-weight: 600; margin-bottom: 24px; }
+/* 外部视野 = 以后放图片的区域 */
+.viewport { text-align: center; padding: 18px 0 4px; }
+.viewport img { width: 100%; border-radius: 12px; display: block; }
+.status-title { text-align: center; color: #4a4e63; font-size: 19px; font-weight: 600; margin: 10px 0 20px; }
 .status-foot {
   display: flex; justify-content: space-between;
   border-top: 1px solid var(--line);
@@ -73,10 +61,12 @@ body {
 }
 .status-foot b { color: var(--text); font-weight: 600; }
 
-/* 页签行 */
+/* 页签行：吸顶，横幅出现时贴在横幅下沿 */
 .tabbar {
+  position: sticky; top: var(--pinh); z-index: 5;
   display: flex; justify-content: space-between; align-items: center;
   padding: 6px 14px 2px;
+  background: var(--shell);
   border-bottom: 1px solid #e2e5f0;
 }
 .tab {
@@ -87,8 +77,35 @@ body {
 .tab.active { color: var(--text); font-weight: 700; }
 .tab.on { color: var(--accent); font-weight: 700; }
 
-/* 正文滚动区 */
-#view { flex: 1; padding: 10px 18px calc(28px + env(safe-area-inset-bottom)); overflow-y: auto; }
+/* 收起后的顶部细条幅：EDEN/编号 + 舱室状态 + ∞ */
+#pinbanner {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 10;
+  display: flex; justify-content: center; pointer-events: none;
+}
+.pb {
+  pointer-events: auto;
+  width: 100%; max-width: 560px;
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  background: rgba(244, 245, 251, .93);
+  backdrop-filter: blur(8px);
+  padding: calc(8px + env(safe-area-inset-top)) 18px 8px;
+  border-bottom: 1px solid #e2e5f0;
+  transform: translateY(-120%);
+  transition: transform .25s ease;
+}
+#pinbanner.show .pb { transform: translateY(0); }
+.pb-brand { font-weight: 800; font-size: 16px; letter-spacing: .5px; }
+.pb-status { color: var(--dim); font-size: 13px; margin-left: auto; }
+#pinreset {
+  background: none; border: none; cursor: pointer;
+  color: var(--dim); font-size: 15px; padding: 2px 6px;
+}
+@media (min-width: 600px) {
+  .pb { border-radius: 0 0 18px 18px; }
+}
+
+/* 正文（整页滚动，空间尽量留给剧情） */
+#view { flex: 1; padding: 12px 18px calc(36px + env(safe-area-inset-bottom)); }
 
 /* 剧情块 */
 .block { margin-bottom: 18px; animation: fadein .35s ease; }
