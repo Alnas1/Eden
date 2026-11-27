@@ -1,0 +1,12 @@
+{
+  "name": "EDEN · 剩余时间",
+  "short_name": "EDEN",
+  "description": "太空舱文字剧情：你卖掉了自己的剩余时间，伊甸说还有25天。",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#e8eaf2",
+  "theme_color": "#e8eaf2",
+  "icons": [
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ]
+}
