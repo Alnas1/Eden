@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="300" viewBox="0 0 800 300">
+  <!-- 灰世界占位图：后室黄墙纸 + 潮湿地毯，以后直接换文件 -->
+  <rect width="800" height="300" fill="#d8cfa2"/>
+  <g fill="#cfc492">
+    <rect x="0" y="0" width="40" height="236"/><rect x="80" y="0" width="40" height="236"/>
+    <rect x="160" y="0" width="40" height="236"/><rect x="240" y="0" width="40" height="236"/>
+    <rect x="320" y="0" width="40" height="236"/><rect x="400" y="0" width="40" height="236"/>
+    <rect x="480" y="0" width="40" height="236"/><rect x="560" y="0" width="40" height="236"/>
+    <rect x="640" y="0" width="40" height="236"/><rect x="720" y="0" width="40" height="236"/>
+  </g>
+  <ellipse cx="180" cy="120" rx="70" ry="46" fill="#b8a96e" opacity=".35"/>
+  <ellipse cx="620" cy="190" rx="54" ry="38" fill="#a89a62" opacity=".3"/>
+  <ellipse cx="410" cy="60" rx="90" ry="30" fill="#b8a96e" opacity=".25"/>
+  <rect y="236" width="800" height="64" fill="#b3a674"/>
+  <rect y="232" width="800" height="6" fill="#9d9160"/>
+  <g fill="#8f834f" opacity=".5">
+    <circle cx="300" cy="266" r="2"/><circle cx="520" cy="254" r="1.6"/><circle cx="680" cy="276" r="2.2"/>
+  </g>
+</svg>
