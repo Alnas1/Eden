@@ -1,0 +1,141 @@
+/* ===== EDEN · 太空舱文字剧情 · 浅色卡片美学 ===== */
+:root {
+  --bg: #dfe2ec;
+  --shell: #f4f5fb;
+  --card: #dfe2ee;
+  --chip: #e6e9f3;
+  --chip-press: #d7dbea;
+  --text: #1c1e26;
+  --dim: #70748a;
+  --line: #c3c7da;
+  --accent: #5f67e0;
+  --green-bg: #c9ecd7;
+  --green-tx: #1f9d5b;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html, body { height: 100%; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: "PingFang SC", "Microsoft YaHei", "Noto Sans SC", sans-serif;
+  -webkit-tap-highlight-color: transparent;
+}
+
+#app {
+  max-width: 560px;
+  margin: 0 auto;
+  min-height: 100dvh;
+  background: var(--shell);
+  border-radius: 0;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 0 40px rgba(40, 44, 80, .14);
+}
+@media (min-width: 600px) {
+  #app { border-radius: 26px; margin: 14px auto; min-height: calc(100dvh - 28px); }
+}
+
+/* 顶栏 */
+.topbar {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: calc(16px + env(safe-area-inset-top)) 20px 12px;
+}
+.brand { font-size: 22px; font-weight: 800; letter-spacing: .5px; }
+.san {
+  font-size: 13px; font-weight: 600;
+  color: var(--green-tx); background: var(--green-bg);
+  border-radius: 999px; padding: 4px 14px;
+}
+
+/* 状态大卡 */
+.status-card {
+  background: var(--card);
+  border-radius: 18px;
+  padding: 16px 20px 14px;
+  margin: 4px 14px 10px;
+}
+.status-head {
+  display: flex; justify-content: space-between; align-items: center;
+  color: var(--dim); font-size: 13px; letter-spacing: 1.5px;
+}
+#resetbtn {
+  background: none; border: none; cursor: pointer;
+  color: var(--dim); font-size: 16px; padding: 2px 6px;
+}
+.status-icon { text-align: center; margin: 22px 0 12px; }
+.status-title { text-align: center; color: #4a4e63; font-size: 19px; font-weight: 600; margin-bottom: 24px; }
+.status-foot {
+  display: flex; justify-content: space-between;
+  border-top: 1px solid var(--line);
+  padding-top: 12px; color: var(--dim); font-size: 14px;
+}
+.status-foot b { color: var(--text); font-weight: 600; }
+
+/* 页签行 */
+.tabbar {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 6px 14px 2px;
+  border-bottom: 1px solid #e2e5f0;
+}
+.tab {
+  background: none; border: none; cursor: pointer;
+  font-family: inherit; font-size: 15px; color: var(--dim);
+  padding: 8px 10px; border-radius: 8px;
+}
+.tab.active { color: var(--text); font-weight: 700; }
+.tab.on { color: var(--accent); font-weight: 700; }
+
+/* 正文滚动区 */
+#view { flex: 1; padding: 10px 18px calc(28px + env(safe-area-inset-bottom)); overflow-y: auto; }
+
+/* 剧情块 */
+.block { margin-bottom: 18px; animation: fadein .35s ease; }
+@keyframes fadein { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; } }
+.block h2 { font-size: 22px; font-weight: 800; margin-bottom: 8px; }
+.block p { font-size: 16.5px; line-height: 1.75; margin-bottom: 6px; }
+.block .sys { color: var(--dim); }
+.gain { font-size: 15px; margin-top: 10px; }
+.gain b { color: var(--accent); }
+
+/* 选项按钮 = 手写体 */
+.choice-list { display: flex; flex-direction: column; gap: 12px; margin-top: 18px; }
+.btn {
+  font-family: "KaiTi", "STKaiti", "楷体", "FZKai-Z03S", serif;
+  background: var(--chip);
+  color: var(--text);
+  border: none; border-radius: 12px;
+  padding: 14px 18px;
+  font-size: 18px;
+  cursor: pointer;
+  text-align: left;
+}
+.btn:active { background: var(--chip-press); }
+.btn.plain { font-family: inherit; font-size: 16px; text-align: center; color: var(--dim); }
+
+/* 通用卡片行 */
+.row {
+  background: var(--chip); border-radius: 14px;
+  padding: 14px 16px; margin-bottom: 12px;
+  display: flex; flex-direction: column; gap: 5px;
+}
+.row b { font-size: 15.5px; }
+.row .desc { font-size: 14px; color: var(--dim); line-height: 1.6; }
+.row.locked { opacity: .45; }
+.row.here { outline: 2px solid var(--accent); }
+
+.countdown {
+  font-size: 40px; text-align: center; font-weight: 700;
+  letter-spacing: 2px; margin: 22px 0 6px; color: var(--accent);
+}
+.countdown-label { text-align: center; color: var(--dim); font-size: 14px; margin-bottom: 22px; }
+.quote {
+  margin: 12px 0; padding: 14px 16px;
+  background: var(--chip); border-radius: 12px;
+  font-size: 14.5px; line-height: 1.8; color: #3a3e50;
+}
+.note { font-size: 13px; color: var(--dim); margin-top: 14px; line-height: 1.7; }
+.empty { color: var(--dim); font-size: 15px; text-align: center; margin-top: 40px; }
+.endcard { text-align: center; margin-top: 26px; color: var(--dim); font-size: 15px; line-height: 2; }
+.endcard b { color: var(--text); font-size: 17px; }
