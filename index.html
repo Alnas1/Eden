@@ -22,13 +22,31 @@
     <div class="tabtools">
       <a class="tbtn" href="dev.html" title="编辑页">✎</a>
       <button class="tbtn" id="tabreset" title="重新开始">∞</button>
+      <button class="tbtn" id="tabfx" title="输出方式">▸▸</button>
+    </div>
+    <div id="fxpanel" hidden>
+      <div class="fx-row"><span>输出方式</span>
+        <div class="seg" id="fxmode">
+          <button data-v="none">全出</button>
+          <button data-v="line">逐行</button>
+          <button data-v="char">逐字</button>
+        </div>
+      </div>
+      <div class="fx-row"><span>速度</span>
+        <div class="seg" id="fxspeed">
+          <button data-v="slow">慢</button>
+          <button data-v="mid">中</button>
+          <button data-v="fast">快</button>
+        </div>
+      </div>
+      <div class="fx-tip">逐字=一个字一个字出。打字途中点一下屏幕，立刻全部显示完。</div>
     </div>
   </nav>
 
   <main id="view"></main>
 </div>
 
-<!-- 黑场开场：大字「伊甸」浮现再消退，点屏幕可跳过 -->
+<!-- 黑场大字卡：开场「伊甸」与进入切片世界共用。字直接蹦出（不缩放不淡入），停两秒再渐隐 -->
 <div id="intro" hidden>
   <div class="ititle">伊甸</div>
 </div>
