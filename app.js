@@ -1,17 +1,32 @@
-/* ===== EDEN 剧情引擎 v7 =====
+/* ===== EDEN 剧情引擎 v8 =====
  * v4：切片世界(流速/相位后台)、need、enter/stay/dispatch。
  * v5：世界皮肤、箱子、页签入口。 v6：编辑页世界表+机制字段合并。
  * v7：新开场替代捏人——黑场大字「伊甸」→ 滴滴音效(sfx)→ 热气球对焦小游戏(focus)
  *     → 复诵姓名/性别/年龄(ask，年龄数字，余额=(120-年龄)/7天)→ 合同。身份卡已删。
- * 新节点字段：sfx "beep" | focus {ok,no} | ask "profile" | add 数字(余额+，如味觉换7天)
- * 新占位符：{年限}=120-年龄 {性别}（{身份}已废弃）
+ * v8：黑场大字卡改版——字直接蹦出（不淡入不缩放）→ 渐隐；开场用「伊甸」，
+ *     进入切片世界（node.enter）自动用世界名放同款卡。
+ *     文本行首 `*灰：` = 该行灰色。导航栏最右 ▸▸ = 输出方式设置：
+ *     全出/逐行/逐字 + 慢/中/快，存 eden-fx-v1（独立于存档），默认逐行·中速，
+ *     打字中点屏幕=立刻显示完；选项按钮在打字结束后才出现。
  */
 (function () {
   'use strict';
 
   var SAVE_KEY = 'eden-save-v5';
   var CUSTOM_KEY = 'eden-content-v1';
+  var FX_KEY = 'eden-fx-v1';
   var AVG_LIFE = 120;
+
+  /* 输出方式（打字效果）：独立于存档，重开游戏保留。默认 逐行·中速 */
+  var fx = { mode: 'line', speed: 'mid' };
+  try {
+    var fx0 = JSON.parse(localStorage.getItem(FX_KEY) || 'null');
+    if (fx0 && (fx0.mode === 'none' || fx0.mode === 'line' || fx0.mode === 'char')) fx = fx0;
+  } catch (e) { }
+  function saveFx() { try { localStorage.setItem(FX_KEY, JSON.stringify(fx)); } catch (e) { } }
+  var LINE_MS = { slow: 420, mid: 240, fast: 110 };   /* 逐行：每行停顿 */
+  var CHAR_MS = { slow: 55, mid: 30, fast: 15 };      /* 逐字：每字停顿 */
+  var UNIT_GAP = { slow: 260, mid: 160, fast: 80 };   /* 逐字：段与段之间 */
 
   var D = JSON.parse(JSON.stringify(window.EDEN_DATA));
 
@@ -184,7 +199,9 @@
     var box = el('div', 'block' + (enter ? ' enter' : ''));
     if (node.speaker) box.appendChild(el('h2', null, esc(sub(node.speaker))));
     (node.text || []).forEach(function (p) {
-      var isSys = /^[【—（哔滴]|摘要/.test(p);
+      var grey = /^\*灰：/.test(p);
+      if (grey) p = p.slice(3);
+      var isSys = grey || /^[【—（哔滴]|摘要/.test(p);
       box.appendChild(el('p', isSys ? 'sys' : null, esc(sub(p))));
     });
     (node.gain || []).forEach(function (i) {
@@ -197,6 +214,69 @@
     return String(s).replace(/[&<>"]/g, function (c) {
       return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c];
     });
+  }
+
+  /* ===== 打字效果：新剧情段按设置逐行/逐字出现，点屏幕立刻出完 =====
+   * 隐藏段照常占位（.th），所以打字过程中页面高度不变、不跳动。
+   * 打完才回调（那时才出选项按钮/复诵弹窗）。 */
+  var typing = null;
+
+  function typeBlock(box, done) {
+    if (typing) typing.finish();
+    if (fx.mode === 'none' || !box.parentNode || !box.children.length) { done(); return; }
+
+    var units = Array.prototype.slice.call(box.children);
+    var i = 0, timer = null, dead = false;
+
+    units.forEach(function (u) { u.style.visibility = 'hidden'; });
+
+    function finish() {
+      if (dead) return;
+      dead = true;
+      if (timer) { clearTimeout(timer); timer = null; }
+      document.removeEventListener('pointerdown', skip, true);
+      if (typing && typing.box === box) typing = null;
+      units.forEach(function (u) {
+        u.style.visibility = '';
+        var tv = u.querySelector('.tv'), th = u.querySelector('.th');
+        if (tv && th) { tv.textContent = tv.textContent + th.textContent; u.removeChild(th); }
+      });
+      done();
+    }
+    function skip() { finish(); }
+    function look(u) { try { u.scrollIntoView({ block: 'nearest' }); } catch (e) { } }
+
+    function nextUnit() {
+      if (dead || i >= units.length) { finish(); return; }
+      var u = units[i++];
+      look(u);
+      if (fx.mode === 'char' && u.tagName === 'P' && u.textContent) {
+        typeChars(u, function () { timer = setTimeout(nextUnit, UNIT_GAP[fx.speed] || 160); });
+      } else {
+        u.style.visibility = 'visible';
+        timer = setTimeout(nextUnit, fx.mode === 'line' ? (LINE_MS[fx.speed] || 240) : 90);
+      }
+    }
+
+    function typeChars(u, cb) {
+      var full = u.textContent;
+      u.innerHTML = '<span class="tv"></span><span class="th">' + esc(full) + '</span>';
+      var tv = u.firstChild, th = u.lastChild;
+      var n = 0, per = CHAR_MS[fx.speed] || 30;
+      (function step() {
+        if (dead) return;
+        n++;
+        tv.textContent = full.slice(0, n);
+        th.textContent = full.slice(n);
+        if (n === 1) u.style.visibility = 'visible';
+        if (n < full.length) timer = setTimeout(step, per);
+        else { th.textContent = ''; timer = setTimeout(cb, 60); }
+      })();
+    }
+
+    document.addEventListener('pointerdown', skip, true);
+    typing = { box: box, finish: finish };
+    nextUnit();
   }
 
   /* log 页：feed 常驻，点选项只追加新段落 + 换尾部按钮，整屏不重画（防闪） */
@@ -367,15 +447,28 @@
     applyTheme();
     document.getElementById('pincabin').textContent = sub(state.status);
     renderTabs();
-    if (wasLog && feedEl && feedEl.parentNode === $view) {
-      feedEl.appendChild(blockNode(node, true));
+    /* 打字期间旧选项先撤掉，防止连点两下跳两节 */
+    if (tailEl && tailEl.parentNode) tailEl.parentNode.removeChild(tailEl);
+
+    /* 剧情真正落屏（打完字）之后，才放尾部按钮和复诵弹窗 */
+    function settle() {
       renderTail();
-    } else {
-      rebuildFeed();
+      window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+      if (node.ask) openAsk();
     }
-    window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
-    if (node.sfx) playSfx(node.sfx);
-    if (node.ask) openAsk();
+    function typeIn() {
+      if (node.sfx) playSfx(node.sfx);
+      if (wasLog && feedEl && feedEl.parentNode === $view) {
+        var blk = blockNode(node, true);
+        feedEl.appendChild(blk);
+        typeBlock(blk, function () { if (blk.parentNode) settle(); });
+      } else {
+        rebuildFeed();
+        settle();
+      }
+    }
+    if (node.enter) { showTitleCard(sub(node.enter), typeIn); }  /* 进入切片：黑屏大字卡（只显世界名） */
+    else { typeIn(); }
   }
 
   function idOf(node) {
@@ -501,14 +594,44 @@
   document.getElementById('pinreset').onclick = reset;
   document.getElementById('tabreset').onclick = reset;
 
-  /* ===== 黑场开场：大字「伊甸」浮现 → 消退 → 露出正常界面；点屏幕跳过 ===== */
+  /* ===== 输出方式设置面板（导航栏最右 ▸▸）===== */
+  var fxBtn = document.getElementById('tabfx');
+  var fxPanel = document.getElementById('fxpanel');
+  function fxSync() {
+    Array.prototype.slice.call(fxPanel.querySelectorAll('.seg')).forEach(function (seg) {
+      var key = seg.id === 'fxmode' ? 'mode' : 'speed';
+      Array.prototype.slice.call(seg.querySelectorAll('button')).forEach(function (b) {
+        b.classList.toggle('active', fx[key] === b.getAttribute('data-v'));
+      });
+    });
+  }
+  fxBtn.onclick = function (e) {
+    e.stopPropagation();
+    fxPanel.hidden = !fxPanel.hidden;
+    fxSync();
+  };
+  Array.prototype.slice.call(fxPanel.querySelectorAll('.seg button')).forEach(function (b) {
+    b.onclick = function () {
+      var seg = b.parentNode;
+      fx[seg.id === 'fxmode' ? 'mode' : 'speed'] = b.getAttribute('data-v');
+      saveFx(); fxSync();
+    };
+  });
+  document.addEventListener('pointerdown', function (e) {
+    if (fxPanel.hidden) return;
+    if (!fxPanel.contains(e.target) && e.target !== fxBtn) fxPanel.hidden = true;
+  });
+
+  /* ===== 黑场大字卡：字直接蹦出（无淡入无缩放）→ 停两秒 → 慢慢渐隐。
+   * 开场放「伊甸」，进入切片世界放世界名；点屏幕跳过；done 在卡完全谢幕时回调 ===== */
   var introEl = document.getElementById('intro');
-  function playIntro(done) {
+  function showTitleCard(text, done) {
     var it = introEl.querySelector('.ititle');
     var timers = [], finished = false;
+    it.textContent = text;
     introEl.hidden = false;
     document.body.classList.add('locked');
-    function fin() {
+    function uncover() {
       if (finished) return;
       finished = true;
       timers.forEach(clearTimeout); timers = [];
@@ -518,14 +641,15 @@
         introEl.hidden = true;
         introEl.classList.remove('out');
         document.body.classList.remove('locked');
-        introEl.removeEventListener('click', fin);
-        done();
-      }, 700);
+        introEl.removeEventListener('click', skipCard);
+        if (done) done();
+      }, 750);
     }
-    introEl.addEventListener('click', fin);
-    timers.push(setTimeout(function () { it.classList.add('on'); }, 500));
-    timers.push(setTimeout(function () { it.classList.remove('on'); }, 3000));
-    timers.push(setTimeout(fin, 4900));
+    function skipCard() { uncover(); }
+    introEl.addEventListener('click', skipCard);
+    timers.push(setTimeout(function () { it.classList.add('on'); }, 350));      /* 黑半秒，字突然出现 */
+    timers.push(setTimeout(function () { it.classList.remove('on'); }, 2300));  /* 停一会儿，开始 1.8s 渐隐 */
+    timers.push(setTimeout(uncover, 4250));                                     /* 渐隐走完，黑屏谢幕 */
   }
 
   /* ===== 复诵档案：姓名/性别/年龄；年龄必须是数字，决定折算余额 ===== */
@@ -557,7 +681,7 @@
   if (state.char) {
     render();
   } else {
-    playIntro(function () {
+    showTitleCard('伊甸', function () {
       render();
       var n = D.nodes[state.node];
       if (n && n.sfx) playSfx(n.sfx);
