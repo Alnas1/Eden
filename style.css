@@ -77,6 +77,33 @@ body {
 }
 .tbtn:active { background: var(--chip-press); }
 
+/* 输出方式设置：导航栏最右侧按钮下面的下拉小面板 */
+#fxpanel {
+  position: absolute; top: calc(100% + 6px); right: 12px; z-index: 20;
+  width: min(320px, calc(100% - 24px));
+  background: var(--shell); border: 1px solid var(--line); border-radius: 14px;
+  box-shadow: 0 10px 30px rgba(40, 44, 80, .18);
+  padding: 12px 14px; display: flex; flex-direction: column; gap: 10px;
+}
+.fx-row {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  font-size: 13.5px; color: var(--dim);
+}
+.seg { display: flex; background: var(--chip); border-radius: 10px; padding: 3px; gap: 3px; }
+.seg button {
+  font-family: inherit; font-size: 14px; color: var(--dim);
+  background: none; border: none; border-radius: 8px;
+  padding: 7px 13px; cursor: pointer; touch-action: manipulation;
+}
+.seg button.active {
+  background: var(--shell); color: var(--text); font-weight: 700;
+  box-shadow: 0 1px 4px rgba(40, 44, 80, .12);
+}
+.fx-tip { font-size: 12px; color: var(--dim); line-height: 1.6; }
+
+/* 逐字打字：隐藏的后半段照常占位，页面高度不跳 */
+.th { visibility: hidden; }
+
 /* 收起后的顶部条幅：占位图 + EDEN/编号 + 舱室状态 + ∞ */
 #pinbanner {
   position: fixed; top: 0; left: 0; right: 0; z-index: 10;
@@ -139,7 +166,8 @@ body.locked { overflow: hidden; }
 #aerr { color: #b0484d; font-size: 13.5px; min-height: 18px; }
 #ask .btn { text-align: center; margin-top: 4px; }
 
-/* 黑场开场：大字「伊甸」浮现再消退；点屏幕跳过 */
+/* 黑场大字卡（开场「伊甸」/ 进入切片世界）：
+   字直接蹦出来（无淡入、无缩放），停留约两秒后慢慢渐隐；点屏幕跳过 */
 #intro {
   position: fixed; inset: 0; z-index: 50;
   background: #05060c;
@@ -147,14 +175,15 @@ body.locked { overflow: hidden; }
   opacity: 1; transition: opacity .7s ease;
 }
 #intro.out { opacity: 0; }
+#intro.out .ititle { opacity: 0; transition: opacity .5s ease; }
 .ititle {
   font-family: "KaiTi", "STKaiti", "楷体", serif;
   font-size: min(30vw, 150px);
   color: #e8eaf2; letter-spacing: .18em;
-  opacity: 0; transform: scale(1.12);
-  transition: opacity 1.6s ease, transform 2.4s ease;
+  opacity: 0;
+  transition: opacity 1.8s ease; /* 只负责淡出 */
 }
-.ititle.on { opacity: 1; transform: scale(1); }
+.ititle.on { opacity: 1; transition: none; } /* 加上即出现，不淡入不缩放 */
 
 /* 对焦小游戏：热气球视力表替换外部视野图，按住变清晰 */
 .focuspad { width: 150px; margin: 0 auto; text-align: center; touch-action: none; user-select: none; cursor: pointer; }
