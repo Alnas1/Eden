@@ -8,6 +8,7 @@
  *     文本行首 `*灰：` = 该行灰色。导航栏最右 ▸▸ = 输出方式设置：
  *     全出/逐行/逐字 + 慢/中/快，存 eden-fx-v1（独立于存档），默认逐行·中速，
  *     打字中点屏幕=立刻显示完；选项按钮在打字结束后才出现。
+ * v9：大字卡节奏=亮1.5秒→淡1秒；对焦小游戏热气球改用真图 th.jpg（数字浮在球体上）。
  */
 (function () {
   'use strict';
@@ -356,16 +357,10 @@
     var pad = el('div', 'focuspad');
     pad.id = 'focuspad';
     pad.innerHTML =
-      '<svg viewBox="0 0 130 150" width="150" height="172">' +
-      '<g class="fg">' +
-      '<circle cx="65" cy="55" r="46" fill="#eef0f8" stroke="#9aa0c8" stroke-width="2.5"/>' +
-      '<path d="M25 46 Q65 10 105 46" stroke="#5f67e0" stroke-width="3" fill="none" opacity=".7"/>' +
-      '<path d="M42 20 Q65 8 88 20" stroke="#c3c7da" stroke-width="2" fill="none"/>' +
-      '<text x="65" y="72" text-anchor="middle" font-size="34" font-weight="700" fill="#1c1e26">' + state.quiz + '</text>' +
-      '<line x1="47" y1="98" x2="56" y2="118" stroke="#9aa0c8" stroke-width="2"/>' +
-      '<line x1="83" y1="98" x2="74" y2="118" stroke="#9aa0c8" stroke-width="2"/>' +
-      '<rect x="53" y="118" width="24" height="16" rx="3" fill="#b79a6a" stroke="#8a6f4d" stroke-width="2"/>' +
-      '</g></svg>' +
+      '<div class="fg">' +
+      '<img class="fballoon" src="th.jpg" alt="" draggable="false">' +
+      '<div class="fnum">' + state.quiz + '</div>' +
+      '</div>' +
       '<div class="fhint">按住画面 · 把热气球拧到清晰</div>';
     vpEl.appendChild(pad);
 
@@ -648,8 +643,8 @@
     function skipCard() { uncover(); }
     introEl.addEventListener('click', skipCard);
     timers.push(setTimeout(function () { it.classList.add('on'); }, 350));      /* 黑半秒，字突然出现 */
-    timers.push(setTimeout(function () { it.classList.remove('on'); }, 2300));  /* 停一会儿，开始 1.8s 渐隐 */
-    timers.push(setTimeout(uncover, 4250));                                     /* 渐隐走完，黑屏谢幕 */
+    timers.push(setTimeout(function () { it.classList.remove('on'); }, 1850));  /* 亮 1.5 秒，开始 1 秒渐隐 */
+    timers.push(setTimeout(uncover, 2950));                                     /* 淡完再黑 0.1 秒，谢幕 */
   }
 
   /* ===== 复诵档案：姓名/性别/年龄；年龄必须是数字，决定折算余额 ===== */
